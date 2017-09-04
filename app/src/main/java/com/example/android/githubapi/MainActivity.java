@@ -6,7 +6,9 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.view.View;
 import android.widget.EditText;
+import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -25,6 +27,9 @@ public class MainActivity extends AppCompatActivity {
     // COMPLETED (28) Create a TextView variable called mSearchResultsTextView
     private TextView mSearchResultsTextView;
 
+    private TextView errorMessageTextView;
+
+    private ProgressBar mLoadingIndicator;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -37,6 +42,10 @@ public class MainActivity extends AppCompatActivity {
         mUrlDisplayTextView = (TextView) findViewById(R.id.tv_url_display);
         // COMPLETED (31) Use findViewById to get a reference to mSearchResultsTextView
         mSearchResultsTextView = (TextView) findViewById(R.id.tv_github_search_results_json);
+
+        errorMessageTextView = (TextView) findViewById(R.id.tv_error_message_display);
+
+        mLoadingIndicator = (ProgressBar) findViewById(R.id.pb_loading_indicator);
     }
 
     private void makeGithubSearchQuery() {
@@ -44,13 +53,23 @@ public class MainActivity extends AppCompatActivity {
         URL githubSearchUrl = NetworkUtils.buildUrl(githubQuery);
         mUrlDisplayTextView.setText(githubSearchUrl.toString());
         String githubSearchResults = null;
-//        try {
-//            githubSearchResults = NetworkUtils.getResponseFromHttpUrl(githubSearchUrl);
-//            mSearchResultsTextView.setText(githubSearchResults);
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
         new GithubQueryTask().execute(githubSearchUrl);
+    }
+
+    // TODO (14) Create a method called showJsonDataView to show the data and hide the error
+
+    public void ShowJsonDataView(){
+        // First, make sure the error is invisible
+        errorMessageTextView.setVisibility(View.INVISIBLE);
+
+        // Then, make sure the JSON data is visible
+        mSearchResultsTextView.setVisibility(View.VISIBLE);
+
+    }
+
+    private void ShowErrorMessage(){
+        errorMessageTextView.setVisibility(View.VISIBLE);
+        mSearchResultsTextView.setVisibility(View.INVISIBLE);
     }
 
     public class GithubQueryTask extends AsyncTask<URL, Void, String> {
@@ -62,14 +81,25 @@ public class MainActivity extends AppCompatActivity {
                 githubSearchResults = NetworkUtils.getResponseFromHttpUrl(searchUrl);
             } catch (IOException e){
                 e.printStackTrace();
-            } return githubSearchResults;
-
+            }
+            return githubSearchResults;
         }
 
         @Override
-        protected void onPostExecute(String s) {
-            if (s != null && !s.equals("")) {
-                mSearchResultsTextView.setText(s);
+        protected void onPreExecute() {
+            super.onPreExecute();
+            mLoadingIndicator.setVisibility(View.VISIBLE);
+        }
+
+        @Override
+        protected void onPostExecute(String githubSearchResults) {
+            mLoadingIndicator.setVisibility(View.INVISIBLE);
+            if (githubSearchResults != null && !githubSearchResults.equals("")) {
+                ShowJsonDataView();
+                mSearchResultsTextView.setText(githubSearchResults);
+            } else {
+                ShowErrorMessage();
+
             }
         }
     }
